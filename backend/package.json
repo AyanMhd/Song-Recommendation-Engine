@@ -1,0 +1,23 @@
+{
+  "name": "lyric-vibe-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "pipeline:fetch": "node scripts/fetchSongs.js",
+    "pipeline:lyrics": "node scripts/fetchLyrics.js",
+    "pipeline:collect": "node scripts/collectArtistData.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
