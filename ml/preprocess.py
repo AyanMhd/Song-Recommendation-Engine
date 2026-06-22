@@ -6,7 +6,14 @@ from pathlib import Path
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from common import clean_lyrics, compute_theme_scores, embed_texts, split_into_chunks, vector_to_list
+from common import (
+    clean_lyrics,
+    compute_theme_scores,
+    embed_texts,
+    get_model,
+    split_into_chunks,
+    vector_to_list,
+)
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 THEME_MODEL_VERSION = "theme_definitions_v1"
@@ -70,7 +77,7 @@ def find_artist(cur, artist_name: str):
 def get_songs_needing_embed(cur, artist_id: int, reembed: bool = False):
     cur.execute(
         """
-        SELECT s.id, s.title, COALESCE(l.raw_lyrics, '') AS raw_lyrics
+        SELECT s.id, s.title
         FROM songs s
         JOIN lyrics l ON l.song_id = s.id
         WHERE s.artist_id = %s
@@ -85,6 +92,23 @@ def get_songs_needing_embed(cur, artist_id: int, reembed: bool = False):
         (artist_id, reembed),
     )
     return cur.fetchall()
+
+
+def get_raw_lyrics(cur, song_id: int) -> str:
+    cur.execute(
+        """
+        SELECT COALESCE(raw_lyrics, '') AS raw_lyrics
+        FROM lyrics
+        WHERE song_id = %s
+        """,
+        (song_id,),
+    )
+    row = cur.fetchone()
+    return row["raw_lyrics"] if row else ""
+
+
+def log(message: str) -> None:
+    print(message, flush=True)
 
 
 def clear_song_derived_data(cur, song_id: int):
@@ -218,79 +242,67 @@ def main():
         raise SystemExit('Usage: python ml/preprocess.py "Artist Name" [--reembed]')
 
     conn = get_connection()
+    saved_count = 0
+    skipped_count = 0
 
     try:
-        with conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                artist = find_artist(cur, artist_name)
-                if not artist:
-                    raise RuntimeError(
-                        f'Artist "{artist_name}" was not found in PostgreSQL. Run the collection pipeline first.'
-                    )
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            artist = find_artist(cur, artist_name)
+            if not artist:
+                raise RuntimeError(
+                    f'Artist "{artist_name}" was not found in PostgreSQL. Run the collection pipeline first.'
+                )
 
-                songs = get_songs_needing_embed(cur, artist["id"], reembed=reembed)
-                if not songs:
-                    print(f"No songs need embedding for {artist['name']}.")
-                    return
+            songs = get_songs_needing_embed(cur, artist["id"], reembed=reembed)
+            if not songs:
+                log(f"No songs need embedding for {artist['name']}.")
+                return
 
-                prepared = []
-                full_song_texts = []
-                all_chunk_texts = []
-                chunk_song_indexes = []
+            total = len(songs)
+            log(f"Found {total} songs to embed for {artist['name']}.")
+            log("Loading embedding model (first run may take a minute)...")
+            get_model()
+            log("Model ready. Processing one song at a time.")
 
-                for song in songs:
-                    cleaned = clean_lyrics(song["raw_lyrics"])
-                    if not cleaned:
-                        mark_song_skipped(cur, song["id"])
-                        continue
+            for index, song in enumerate(songs, start=1):
+                raw_lyrics = get_raw_lyrics(cur, song["id"])
+                cleaned = clean_lyrics(raw_lyrics)
 
-                    chunks = split_into_chunks(song["raw_lyrics"])
-                    prepared.append(
+                if not cleaned:
+                    mark_song_skipped(cur, song["id"])
+                    conn.commit()
+                    skipped_count += 1
+                    log(f"[{index}/{total}] Skipped \"{song['title']}\" (no usable lyrics)")
+                    continue
+
+                chunk_texts = split_into_chunks(raw_lyrics)
+                log(f"[{index}/{total}] Embedding \"{song['title']}\" ({len(chunk_texts)} chunks)...")
+
+                song_embedding = embed_texts([cleaned])[0]
+                chunk_embedding_rows = embed_texts(chunk_texts) if chunk_texts else []
+
+                payload = {
+                    "clean_lyrics": cleaned,
+                    "chunks": [
                         {
-                            "id": song["id"],
-                            "title": song["title"],
-                            "clean_lyrics": cleaned,
-                            "chunks": [{"text": chunk} for chunk in chunks],
+                            "text": text,
+                            "embedding": vector_to_list(chunk_embedding_rows[chunk_index]),
                         }
-                    )
-                    full_song_texts.append(cleaned)
+                        for chunk_index, text in enumerate(chunk_texts)
+                    ],
+                    "embedding": vector_to_list(song_embedding),
+                    "themes": compute_theme_scores(song_embedding),
+                }
 
-                    for chunk in chunks:
-                        all_chunk_texts.append(chunk)
-                        chunk_song_indexes.append(len(prepared) - 1)
+                save_processed_song(cur, artist["id"], song["id"], payload)
+                conn.commit()
+                saved_count += 1
+                log(f"[{index}/{total}] Saved \"{song['title']}\" to PostgreSQL")
 
-                if not prepared:
-                    print(f"No songs with usable lyrics for {artist['name']}.")
-                    return
-
-                full_song_embeddings = embed_texts(full_song_texts)
-                chunk_embeddings = embed_texts(all_chunk_texts)
-
-                for index, song in enumerate(prepared):
-                    embedding = full_song_embeddings[index]
-                    song["embedding"] = vector_to_list(embedding)
-                    song["themes"] = compute_theme_scores(embedding)
-
-                per_song_chunk_cursor = [0 for _ in prepared]
-                for embedding, song_index in zip(chunk_embeddings, chunk_song_indexes):
-                    cursor = per_song_chunk_cursor[song_index]
-                    prepared[song_index]["chunks"][cursor]["embedding"] = vector_to_list(embedding)
-                    per_song_chunk_cursor[song_index] += 1
-
-                for song in prepared:
-                    save_processed_song(
-                        cur,
-                        artist["id"],
-                        song["id"],
-                        {
-                            "clean_lyrics": song["clean_lyrics"],
-                            "chunks": song["chunks"],
-                            "embedding": song["embedding"],
-                            "themes": song["themes"],
-                        },
-                    )
-
-                print(f"Saved {len(prepared)} processed songs for {artist['name']} to PostgreSQL")
+        log(
+            f"Done. Saved {saved_count} songs for {artist['name']} "
+            f"({skipped_count} skipped)."
+        )
     finally:
         conn.close()
 

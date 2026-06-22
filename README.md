@@ -2,6 +2,8 @@
 
 A full-stack app that recommends songs from a single artist by comparing lyrics, vibe text, and an optional example song.
 
+**Architecture docs:** see [ARCHITECTURE.md](./ARCHITECTURE.md) for HLD diagrams, data flow, database design, and pipeline details.
+
 ## Stack
 
 - Backend: Node.js + Express
@@ -114,12 +116,6 @@ npm run db:migrate
 npm run db:test
 ```
 
-Optional: if you have legacy JSON files in `data/`, import them once with:
-
-```powershell
-npm run db:seed
-```
-
 ## Run the Data Pipeline
 
 From `backend/`:
@@ -228,8 +224,8 @@ Example response:
 From `backend/`:
 
 ```powershell
+npm test
 npm run db:migrate   # apply schema + indexes
-npm run db:seed      # one-time import from data/*.json
 npm run db:test      # connection + table check
 ```
 

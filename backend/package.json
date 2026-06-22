@@ -6,11 +6,11 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "db:migrate": "node scripts/migrateSchema.js",
-    "db:seed": "node scripts/migrateFromJson.js",
     "db:test": "node scripts/testconnection.js",
     "pipeline:fetch": "node scripts/fetchSongs.js",
     "pipeline:lyrics": "node scripts/fetchLyrics.js",
-    "pipeline:collect": "node scripts/collectArtistData.js"
+    "pipeline:collect": "node scripts/collectArtistData.js",
+    "test": "node --test tests"
   },
   "dependencies": {
     "axios": "^1.7.9",
