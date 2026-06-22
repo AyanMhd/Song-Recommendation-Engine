@@ -2,7 +2,7 @@
 
 This document describes how the project is structured, how data flows through the system, and how PostgreSQL + pgvector power recommendations.
 
-For setup and commands, see [README.md](./README.md).
+For setup and commands, see [README.md](../README.md).
 
 ---
 
