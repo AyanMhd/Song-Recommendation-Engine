@@ -2,7 +2,7 @@
 
 A full-stack app that recommends songs from a single artist by comparing lyrics, vibe text, and an optional example song.
 
-**Architecture docs:** see [ARCHITECTURE.md](./ARCHITECTURE.md) for HLD diagrams, data flow, database design, and pipeline details.
+**Architecture docs:** see [ARCHITECTURE.md](./backend/ARCHITECTURE.md) for HLD diagrams, data flow, database design, and pipeline details.
 
 ## Stack
 
