@@ -1,31 +1,26 @@
-<<<<<<< HEAD
 # Lyric Vibe Recommender
 
-A local full-stack app that recommends songs from a single artist by comparing lyrics, vibe text, and an optional example song.
+A full-stack app that recommends songs from a single artist by comparing lyrics, vibe text, and an optional example song.
 
 ## Stack
 
 - Backend: Node.js + Express
 - Frontend: React + Vite
+- Database: PostgreSQL (Neon) + pgvector
 - Data collection: Node.js + MusicBrainz + Genius API + Cheerio
 - ML / preprocessing: Python + `sentence-transformers` (`all-MiniLM-L6-v2`)
-- Storage: JSON files in `data/`
 
 ## Folder Structure
 
 ```text
 personalised_songs/
 ├── backend/
-│   ├── scripts/
-│   │   ├── collectArtistData.js
-│   │   ├── fetchLyrics.js
-│   │   └── fetchSongs.js
+│   ├── scripts/           # ingestion + DB migration scripts
+│   ├── sql/               # schema, indexes, upgrade SQL
+│   ├── shared/
 │   └── src/
-│       ├── services/
-│       └── utils/
-├── data/
-│   ├── processed_songs.json
-│   └── songs.json
+│       ├── db/            # connection + queries
+│       └── services/      # recommender, python bridge
 ├── frontend/
 │   └── src/
 ├── ml/
@@ -40,8 +35,8 @@ personalised_songs/
 
 1. Fetches an artist's official release tracks from MusicBrainz.
 2. Searches Genius for each song and scrapes lyrics.
-3. Cleans lyrics and generates embeddings with `all-MiniLM-L6-v2`.
-4. Scores each song against fixed themes like `struggle`, `uplifting`, and `introspective`.
+3. Cleans lyrics, chunks them, and generates 384-dim embeddings with `all-MiniLM-L6-v2`.
+4. Stores artists, songs, lyrics, chunks, embeddings, and theme scores in PostgreSQL.
 5. Serves a `/search` API that ranks songs using:
 
 ```text
@@ -57,6 +52,7 @@ query_embedding = 0.7 * example_song_embedding + 0.3 * vibe_embedding
 It also includes:
 
 - chunk-level lyric matching for better verse-level similarity
+- artist-scoped pgvector similarity search
 - a light diversity reranker to avoid near-duplicate recommendations
 
 ## Setup
@@ -68,14 +64,19 @@ Create a root `.env` file from `.env.example` and fill in:
 ```env
 PORT=3001
 PYTHON_BIN=python
+DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+GENIUS_ACCESS_TOKEN=your_genius_access_token
 MUSICBRAINZ_APP_NAME=LyricVibeRecommender
 MUSICBRAINZ_APP_VERSION=1.0.0
 MUSICBRAINZ_CONTACT_EMAIL=you@example.com
-GENIUS_ACCESS_TOKEN=your_genius_access_token
 SEARCH_RESULT_LIMIT=10
+HNSW_EF_SEARCH=100
 ```
 
-MusicBrainz does not need an API key, but it does expect a proper identifying `User-Agent`, so the contact email is recommended.
+Notes:
+
+- `DATABASE_URL` must point to a PostgreSQL instance with the `vector` extension enabled (Neon supports this).
+- MusicBrainz does not need an API key, but it expects a proper identifying `User-Agent`, so the contact email is recommended.
 
 ### 2. Install Node dependencies
 
@@ -104,6 +105,21 @@ python -m pip install --upgrade pip
 python -m pip install -r ml\requirements.txt
 ```
 
+### 4. Initialize the database
+
+From `backend/`:
+
+```powershell
+npm run db:migrate
+npm run db:test
+```
+
+Optional: if you have legacy JSON files in `data/`, import them once with:
+
+```powershell
+npm run db:seed
+```
+
 ## Run the Data Pipeline
 
 From `backend/`:
@@ -111,27 +127,25 @@ From `backend/`:
 ### Step 1: Fetch MusicBrainz songs
 
 ```powershell
-node scripts/fetchSongs.js "J Cole"
+npm run pipeline:fetch -- "J. Cole"
 ```
-
-This writes song titles to `data/songs.json`.
 
 ### Step 2: Fetch Genius lyrics
 
 ```powershell
-node scripts/fetchLyrics.js
+npm run pipeline:lyrics -- "J. Cole"
 ```
 
-If you want to refresh existing lyrics:
+Refresh existing lyrics:
 
 ```powershell
-node scripts/fetchLyrics.js --refresh
+npm run pipeline:lyrics -- "J. Cole" --refresh
 ```
 
 ### Or run both together
 
 ```powershell
-node scripts/collectArtistData.js "J Cole"
+npm run pipeline:collect -- "J. Cole"
 ```
 
 ### Step 3: Preprocess + embed
@@ -139,10 +153,14 @@ node scripts/collectArtistData.js "J Cole"
 From the project root:
 
 ```powershell
-python ml\preprocess.py
+python ml\preprocess.py "J. Cole"
 ```
 
-This writes processed vectors and theme scores to `data/processed_songs.json`.
+Re-embed an artist after lyric changes:
+
+```powershell
+python ml\preprocess.py "J. Cole" --reembed
+```
 
 ## Start the App
 
@@ -175,9 +193,9 @@ Open the URL Vite prints, usually `http://localhost:5173`.
 
 ```json
 {
-  "artist": "J Cole",
+  "artist": "J. Cole",
   "vibe_text": "uplifting songs about struggle",
-  "example_song": "Before I'm Gone"
+  "example_song": "Love Yourz"
 }
 ```
 
@@ -192,7 +210,7 @@ Example response:
       "score": 0.82,
       "semantic_similarity": 0.84,
       "theme_alignment": 0.77,
-      "matched_chunk": "No such thing as a life that's better than yours",
+      "youtube_url": "https://www.youtube.com/results?search_query=J.%20Cole%20Love%20Yourz",
       "themes": {
         "struggle": 0.63,
         "uplifting": 0.76,
@@ -205,26 +223,29 @@ Example response:
 }
 ```
 
+## Useful Database Commands
+
+From `backend/`:
+
+```powershell
+npm run db:migrate   # apply schema + indexes
+npm run db:seed      # one-time import from data/*.json
+npm run db:test      # connection + table check
+```
+
 ## Notes
 
+- PostgreSQL is the source of truth for songs, lyrics, embeddings, and theme scores.
 - The backend calls Python on each search request to embed `vibe_text`.
 - The first query can be slower because the embedding model has to load.
-- No database is used; all storage lives in JSON files under `data/`.
 - MusicBrainz requests are throttled to roughly 1 request per second to respect their official API guidance.
 - If the frontend is built with `npm run build`, the Express server can serve the production bundle.
 
 ## Suggested Workflow
 
 1. Add your `.env` values.
-2. Run `node scripts/collectArtistData.js "Artist Name"` from `backend/`.
-3. Run `python ml\preprocess.py` from the project root.
-4. Start backend with `npm run dev`.
-5. Start frontend with `npm run dev`.
-
-## Next Step
-
-If you want, I can also help tune the MusicBrainz fetcher for deluxe editions, collaborations, or alternate versions.
-=======
-# Song-Recommendation-Engine
-Helps me find relevant songs efficiently
->>>>>>> b6c6132185365030654ed19d267b7d270a4ca652
+2. Run `npm run db:migrate` from `backend/`.
+3. Run `npm run pipeline:collect -- "Artist Name"` from `backend/`.
+4. Run `python ml\preprocess.py "Artist Name"` from the project root.
+5. Start backend with `npm run dev`.
+6. Start frontend with `npm run dev`.
