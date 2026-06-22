@@ -190,29 +190,30 @@ Open the URL Vite prints, usually `http://localhost:5173`.
 ```json
 {
   "artist": "J. Cole",
-  "vibe_text": "uplifting songs about struggle",
-  "example_song": "Love Yourz"
+  "vibe_text": "Introspective",
+  "example_song": "4 Your Eyez"
 }
 ```
 
 Example response:
 
 ```json
+```json
 {
   "results": [
     {
-      "title": "Love Yourz",
+      "title": "4 Your Eyez",
       "artist": "J. Cole",
       "score": 0.82,
       "semantic_similarity": 0.84,
       "theme_alignment": 0.77,
-      "youtube_url": "https://www.youtube.com/results?search_query=J.%20Cole%20Love%20Yourz",
+      "youtube_url": "https://www.youtube.com/results?search_query=...",
       "themes": {
-        "struggle": 0.63,
-        "uplifting": 0.76,
+        "struggle": 0.20,
+        "uplifting": 0.40,
         "introspective": 0.69,
-        "love": 0.22,
-        "party": 0.11
+        "love": 0.64,
+        "party": 0.09
       }
     }
   ]
