@@ -10,15 +10,6 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: "..",
     plugins: [react()],
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            three: ["three"],
-          },
-        },
-      },
-    },
     server: {
       port: 5173,
       proxy: {
