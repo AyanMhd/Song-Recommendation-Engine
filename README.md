@@ -198,7 +198,6 @@ Open the URL Vite prints, usually `http://localhost:5173`.
 Example response:
 
 ```json
-```json
 {
   "results": [
     {
