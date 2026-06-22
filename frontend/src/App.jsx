@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { BODIES, createSolarSystemExperience } from "./solarSystemExperience";
-
 export default function App() {
   const mountRef = useRef(null);
   const experienceRef = useRef(null);

@@ -12,8 +12,14 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
-app.get("/health", (_request, response) => {
-  response.json({ ok: true });
+app.get("/health", async (_request, response) => {
+  try {
+    const pool = require("./db/connection");
+    await pool.query("SELECT 1");
+    response.json({ ok: true, database: "connected" });
+  } catch (error) {
+    response.status(503).json({ ok: false, database: "disconnected", error: error.message });
+  }
 });
 
 app.post("/search", async (request, response) => {

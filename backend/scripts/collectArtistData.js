@@ -10,8 +10,12 @@ async function main() {
 
   const songsData = await runFetchSongs(artistName);
   console.log(`Fetched ${songsData.songs.length} unique tracks for ${songsData.artist}.`);
-  await runFetchLyrics({ refresh: false });
-  console.log("Saved merged song + lyrics data to data/songs.json");
+
+  const lyricsResult = await runFetchLyrics({ artistName: songsData.artist, refresh: false });
+  console.log(
+    `Lyrics pipeline complete for ${lyricsResult.artist}: ${lyricsResult.withLyrics || 0} songs with lyrics.`
+  );
+  console.log('Run preprocessing next: python ml/preprocess.py "' + songsData.artist + '"');
 }
 
 if (require.main === module) {

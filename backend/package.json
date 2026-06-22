@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "db:migrate": "node scripts/migrateSchema.js",
+    "db:seed": "node scripts/migrateFromJson.js",
+    "db:test": "node scripts/testconnection.js",
     "pipeline:fetch": "node scripts/fetchSongs.js",
     "pipeline:lyrics": "node scripts/fetchLyrics.js",
     "pipeline:collect": "node scripts/collectArtistData.js"
@@ -15,7 +18,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

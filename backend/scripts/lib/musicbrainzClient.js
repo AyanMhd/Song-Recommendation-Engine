@@ -254,6 +254,7 @@ async function fetchSongsForArtist(artistName) {
 
   return {
     artist: artist.name,
+    musicbrainz_id: artist.id || null,
     songs,
   };
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Lyric Vibe Recommender
 
 A local full-stack app that recommends songs from a single artist by comparing lyrics, vibe text, and an optional example song.
@@ -223,3 +224,7 @@ Example response:
 ## Next Step
 
 If you want, I can also help tune the MusicBrainz fetcher for deluxe editions, collaborations, or alternate versions.
+=======
+# Song-Recommendation-Engine
+Helps me find relevant songs efficiently
+>>>>>>> b6c6132185365030654ed19d267b7d270a4ca652
