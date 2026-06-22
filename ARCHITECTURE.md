@@ -255,54 +255,76 @@ erDiagram
     artists ||--o{ ingestion_runs : tracks
 
     artists {
-        serial id PK
-        text name UK
-        text name_normalized UK
+        int id PK
+        string name UK
+        string name_normalized UK
         uuid musicbrainz_id
+        timestamp created_at
+        timestamp updated_at
     }
 
     songs {
-        serial id PK
+        int id PK
         int artist_id FK
-        text title
-        text title_normalized
-        text processing_status
+        string title
+        string title_normalized
+        string source_release
+        string processing_status
+        timestamp created_at
+        timestamp updated_at
     }
 
     lyrics {
-        serial id PK
-        int song_id FK UK
-        text raw_lyrics
-        text clean_lyrics
+        int id PK
+        int song_id FK
+        string raw_lyrics
+        string clean_lyrics
+        string genius_url
+        timestamp fetched_at
     }
 
     lyric_chunks {
-        serial id PK
+        int id PK
         int song_id FK
         int chunk_index
-        text text
+        string chunk_text
     }
 
     song_embeddings {
-        int song_id PK FK
+        int song_id PK
         int artist_id FK
-        vector384 embedding
+        vector embedding
+        string model_name
+        timestamp embedded_at
     }
 
     chunk_embeddings {
-        int chunk_id PK FK
+        int chunk_id PK
         int song_id FK
         int artist_id FK
-        vector384 embedding
+        vector embedding
+        string model_name
+        timestamp embedded_at
     }
 
     song_theme_scores {
-        int song_id PK FK
-        real struggle
-        real uplifting
-        real introspective
-        real love
-        real party
+        int song_id PK
+        float struggle
+        float uplifting
+        float introspective
+        float love
+        float party
+        string theme_model_version
+        timestamp computed_at
+    }
+
+    ingestion_runs {
+        int id PK
+        int artist_id FK
+        string stage
+        string status
+        timestamp started_at
+        timestamp finished_at
     }
 ```
 
