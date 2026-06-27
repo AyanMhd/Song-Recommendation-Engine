@@ -166,7 +166,7 @@ export default function App() {
               <textarea
                 name="vibeText"
                 onChange={(event) => setVibeText(event.target.value)}
-                placeholder="uplifting songs about struggle and gratitude"
+                placeholder="Introspective songs about love and heartbreak"
                 rows={4}
                 value={vibeText}
               />
