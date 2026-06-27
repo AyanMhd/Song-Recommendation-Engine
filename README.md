@@ -190,10 +190,12 @@ Open the URL Vite prints, usually `http://localhost:5173`.
 ```json
 {
   "artist": "J. Cole",
-  "vibe_text": "Introspective",
-  "example_song": "4 Your Eyez"
+  "example_song": "Love Yourz",
+  "vibe_text": "uplifting songs about struggle"
 }
 ```
+
+`example_song` is required. `vibe_text` is optional — when omitted, recommendations are based on the example song's lyrics alone.
 
 Example response:
 
@@ -232,7 +234,7 @@ npm run db:test      # connection + table check
 ## Notes
 
 - PostgreSQL is the source of truth for songs, lyrics, embeddings, and theme scores.
-- The backend calls Python on each search request to embed `vibe_text`.
+- The backend calls Python to embed `vibe_text` only when a vibe is provided.
 - The first query can be slower because the embedding model has to load.
 - MusicBrainz requests are throttled to roughly 1 request per second to respect their official API guidance.
 - If the frontend is built with `npm run build`, the Express server can serve the production bundle.

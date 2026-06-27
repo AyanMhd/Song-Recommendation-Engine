@@ -8,15 +8,20 @@ const THEME_LABELS = {
   party: "Party",
 };
 
-async function searchSongs({ artist, vibeText, exampleSong }) {
+async function searchSongs({ artist, exampleSong, vibeText }) {
+  const body = {
+    artist,
+    example_song: exampleSong,
+  };
+
+  if (vibeText) {
+    body.vibe_text = vibeText;
+  }
+
   const response = await fetch("/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      artist,
-      vibe_text: vibeText,
-      ...(exampleSong ? { example_song: exampleSong } : {}),
-    }),
+    body: JSON.stringify(body),
   });
 
   const data = await response.json();
@@ -90,8 +95,8 @@ function ResultCard({ song, rank }) {
 
 export default function App() {
   const [artist, setArtist] = useState("");
-  const [vibeText, setVibeText] = useState("");
   const [exampleSong, setExampleSong] = useState("");
+  const [vibeText, setVibeText] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,8 +112,8 @@ export default function App() {
     try {
       const songs = await searchSongs({
         artist: artist.trim(),
-        vibeText: vibeText.trim(),
         exampleSong: exampleSong.trim(),
+        vibeText: vibeText.trim(),
       });
       setResults(songs);
     } catch (submitError) {
@@ -122,9 +127,10 @@ export default function App() {
     <div className="app-shell">
       <header className="hero">
         <p className="eyebrow">Lyric Vibe Recommender</p>
-        <h1>Find songs that match the feeling.</h1>
+        <h1>Find songs with similar lyrics.</h1>
         <p className="hero-copy">
-          Search within one artist&apos;s catalog using a vibe description and an optional example song.
+          Pick an artist and an example song. We match other tracks by lyric similarity. Add an optional
+          vibe to steer the results further.
         </p>
       </header>
 
@@ -144,30 +150,30 @@ export default function App() {
             </label>
 
             <label className="field">
-              <span>Vibe</span>
-              <textarea
-                name="vibeText"
-                onChange={(event) => setVibeText(event.target.value)}
-                placeholder="uplifting songs about struggle and gratitude"
-                required
-                rows={4}
-                value={vibeText}
-              />
-            </label>
-
-            <label className="field">
-              <span>Example song (optional)</span>
+              <span>Example song</span>
               <input
                 name="exampleSong"
                 onChange={(event) => setExampleSong(event.target.value)}
                 placeholder="Love Yourz"
+                required
                 type="text"
                 value={exampleSong}
               />
             </label>
 
+            <label className="field">
+              <span>Vibe (optional)</span>
+              <textarea
+                name="vibeText"
+                onChange={(event) => setVibeText(event.target.value)}
+                placeholder="uplifting songs about struggle and gratitude"
+                rows={4}
+                value={vibeText}
+              />
+            </label>
+
             <button className="submit-button" disabled={loading} type="submit">
-              {loading ? "Searching..." : "Find songs"}
+              {loading ? "Searching..." : "Find similar songs"}
             </button>
           </form>
 
@@ -179,9 +185,9 @@ export default function App() {
             <h2>Recommendations</h2>
             <p>
               {loading
-                ? "Embedding your vibe and ranking songs..."
+                ? "Matching lyrics and ranking songs..."
                 : results.length
-                  ? `${results.length} songs ranked for ${artist.trim()}`
+                  ? `${results.length} songs similar to "${exampleSong.trim()}"`
                   : hasSearched
                     ? "No songs matched this search."
                     : "Run a search to see ranked songs."}

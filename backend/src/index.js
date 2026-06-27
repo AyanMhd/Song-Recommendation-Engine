@@ -28,9 +28,9 @@ app.post("/search", async (request, response) => {
   const exampleSong = request.body?.example_song?.trim();
   const limit = request.body?.limit;
 
-  if (!artist || !vibeText) {
+  if (!artist || !exampleSong) {
     response.status(400).json({
-      error: "`artist` and `vibe_text` are required.",
+      error: "`artist` and `example_song` are required.",
     });
     return;
   }

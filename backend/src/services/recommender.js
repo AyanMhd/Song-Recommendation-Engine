@@ -116,35 +116,40 @@ async function searchSongs({ artist, vibeText, exampleSong, limit = searchResult
       throw error;
     }
 
-    const vibeFeatures = await embedText(vibeText);
-    let queryEmbedding = vibeFeatures.embedding || [];
-    let exampleEntry = null;
+    const exampleEntry = await findSongByTitle(client, artistRow.id, exampleSong);
 
-    if (exampleSong) {
-      exampleEntry = await findSongByTitle(client, artistRow.id, exampleSong);
-
-      if (!exampleEntry) {
-        const error = new Error(
-          `Example song "${exampleSong}" was not found in the processed library for ${artist}.`
-        );
-        error.statusCode = 404;
-        throw error;
-      }
-
-      const exampleEmbedding = await getSongEmbedding(client, exampleEntry.id);
-
-      if (!exampleEmbedding) {
-        const error = new Error(`Example song "${exampleSong}" has no embedding yet.`);
-        error.statusCode = 404;
-        throw error;
-      }
-
-      queryEmbedding = blendVectors(exampleEmbedding.embedding || [], vibeFeatures.embedding || [], 0.7, 0.3);
-      exampleEntry = {
-        ...exampleEntry,
-        embedding: exampleEmbedding.embedding,
-      };
+    if (!exampleEntry) {
+      const error = new Error(
+        `Example song "${exampleSong}" was not found in the processed library for ${artist}.`
+      );
+      error.statusCode = 404;
+      throw error;
     }
+
+    const exampleEmbedding = await getSongEmbedding(client, exampleEntry.id);
+
+    if (!exampleEmbedding) {
+      const error = new Error(`Example song "${exampleSong}" has no embedding yet.`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    let queryEmbedding = exampleEmbedding.embedding || [];
+    let queryThemeVector;
+
+    if (vibeText) {
+      const vibeFeatures = await embedText(vibeText);
+      queryEmbedding = blendVectors(exampleEmbedding.embedding || [], vibeFeatures.embedding || [], 0.7, 0.3);
+      queryThemeVector = getThemeVector(vibeFeatures.themes || {});
+    } else {
+      const exampleThemes = await getThemeScoresForSongs(client, [exampleEntry.id]);
+      queryThemeVector = getThemeVector(exampleThemes.get(exampleEntry.id) || {});
+    }
+
+    const resolvedExample = {
+      ...exampleEntry,
+      embedding: exampleEmbedding.embedding,
+    };
 
     const candidateLimit = Math.max(Number(limit) || searchResultLimit, 10) * 5;
     const [songHits, chunkHits] = await Promise.all([
@@ -158,8 +163,7 @@ async function searchSongs({ artist, vibeText, exampleSong, limit = searchResult
       getThemeScoresForSongs(client, songIds),
       getSongsByIds(client, songIds),
     ]);
-    const queryThemeVector = getThemeVector(vibeFeatures.themes || {});
-    const excludedTitle = exampleEntry ? normalizeSongTitle(exampleEntry.title) : null;
+    const excludedTitle = normalizeSongTitle(resolvedExample.title);
 
     const scoredSongs = [];
 
