@@ -22,12 +22,14 @@ app.get("/health", async (_request, response) => {
   }
 });
 
-app.post("/search", async (request, response) => {
+app.post("/search", async (request, response) => { 
+  //extract the data from the request body
+  //trim - removes extra whitespace from the beginning and end of the string
   const artist = request.body?.artist?.trim();
   const vibeText = request.body?.vibe_text?.trim();
   const exampleSong = request.body?.example_song?.trim();
   const limit = request.body?.limit;
-
+  
   if (!artist || !exampleSong) {
     response.status(400).json({
       error: "`artist` and `example_song` are required.",
@@ -65,6 +67,17 @@ if (fs.existsSync(frontendDistDir)) {
   });
 }
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Lyric vibe backend listening on http://localhost:${port}`);
+});
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(
+      `Port ${port} is already in use. Close the other backend terminal or run: netstat -ano | findstr :${port}`
+    );
+    process.exit(1);
+  }
+
+  throw error;
 });

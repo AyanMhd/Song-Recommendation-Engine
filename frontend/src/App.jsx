@@ -8,7 +8,9 @@ const THEME_LABELS = {
   party: "Party",
 };
 
-async function searchSongs({ artist, exampleSong, vibeText }) {
+async function searchSongs({ artist, exampleSong, vibeText }) { 
+  //example song is neccesary so we create a seperate variable for that and then 
+  //append the vibe text if present
   const body = {
     artist,
     example_song: exampleSong,
@@ -20,11 +22,12 @@ async function searchSongs({ artist, exampleSong, vibeText }) {
 
   const response = await fetch("/search", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" }, 
+    //attach the data we already for search to happen
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const data = await response.json(); // extract json from response
 
   if (!response.ok) {
     throw new Error(data.error || "Search failed.");
@@ -101,7 +104,8 @@ export default function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-
+   
+  //this function is called when the form is submitted
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -122,7 +126,7 @@ export default function App() {
       setLoading(false);
     }
   }
-
+  //this is the main return statement for the app
   return (
     <div className="app-shell">
       <header className="hero">

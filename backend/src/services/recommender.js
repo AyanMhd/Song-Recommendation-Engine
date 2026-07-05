@@ -94,27 +94,35 @@ function applyDiversityRerank(scoredSongs, limit) {
   return selected;
 }
 
+async function resolveArtistForSearch(client, artistName) {
+  const artistRow = await findArtistByName(client, artistName);
+
+  if (!artistRow) {
+    const error = new Error(
+      `Artist "${artistName}" is not currently in the database.`
+    );
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const embeddedCount = await getEmbeddedSongCount(client, artistRow.id);
+
+  if (!embeddedCount) {
+    const error = new Error(
+      `Artist "${artistRow.name}" is in the database but has no embedded songs yet. Run preprocessing for this artist first.`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return artistRow;
+}
+
 async function searchSongs({ artist, vibeText, exampleSong, limit = searchResultLimit }) {
   const client = await pool.connect();
 
   try {
-    const artistRow = await findArtistByName(client, artist);
-
-    if (!artistRow) {
-      const error = new Error(`No processed songs found for artist "${artist}".`);
-      error.statusCode = 404;
-      throw error;
-    }
-
-    const embeddedCount = await getEmbeddedSongCount(client, artistRow.id);
-
-    if (!embeddedCount) {
-      const error = new Error(
-        "No embedded songs found. Run the data collection and preprocessing pipeline first."
-      );
-      error.statusCode = 400;
-      throw error;
-    }
+    const artistRow = await resolveArtistForSearch(client, artist);
 
     const exampleEntry = await findSongByTitle(client, artistRow.id, exampleSong);
 
@@ -203,7 +211,7 @@ async function searchSongs({ artist, vibeText, exampleSong, limit = searchResult
     }
 
     if (!scoredSongs.length) {
-      const error = new Error(`No processed songs found for artist "${artist}".`);
+      const error = new Error(`No similar songs found for "${artistRow.name}".`);
       error.statusCode = 404;
       throw error;
     }

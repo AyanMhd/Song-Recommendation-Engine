@@ -1,7 +1,8 @@
 function normalizeWhitespace(text = "") {
   return text.replace(/\s+/g, " ").trim();
 }
-
+//normalising key - convert to lowercase and replace special characters with spaces
+//this offers better search results by removing special characters and making the search case insensitive
 function normalizeKey(text = "") {
   return normalizeWhitespace(
     text
