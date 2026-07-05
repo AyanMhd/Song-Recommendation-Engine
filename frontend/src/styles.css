@@ -136,6 +136,8 @@ textarea {
   background: rgba(127, 29, 29, 0.28);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
+  display: grid;
+  gap: 10px;
 }
 
 .results-panel {
@@ -278,6 +280,110 @@ textarea {
 
 .youtube-link:hover {
   text-decoration: underline;
+}
+
+.hero-topline {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.hero-compact {
+  margin-bottom: 20px;
+}
+
+.text-button,
+.inline-link-button {
+  border: 0;
+  background: none;
+  color: #c7d2fe;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.text-button:hover,
+.inline-link-button:hover {
+  text-decoration: underline;
+}
+
+.artists-layout {
+  max-width: 960px;
+}
+
+.artists-panel {
+  padding: 22px;
+}
+
+.artists-meta {
+  margin: 0 0 18px;
+  color: rgba(203, 213, 225, 0.78);
+}
+
+.artist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.artist-card {
+  border: 1px solid rgba(148, 163, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.55);
+  color: inherit;
+  padding: 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.artist-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(129, 140, 248, 0.42);
+  background: rgba(30, 41, 59, 0.72);
+}
+
+.artist-card-top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.artist-initial {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #eef2ff;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.45), rgba(192, 132, 252, 0.35));
+}
+
+.artist-card h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.artist-card p {
+  margin: 4px 0 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.92rem;
+}
+
+.artist-card-action {
+  display: inline-flex;
+  margin-top: 16px;
+  color: #c7d2fe;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.empty-state {
+  margin: 8px 0 0;
+  color: rgba(203, 213, 225, 0.78);
 }
 
 @media (max-width: 900px) {

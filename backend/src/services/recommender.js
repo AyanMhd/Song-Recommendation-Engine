@@ -102,6 +102,7 @@ async function resolveArtistForSearch(client, artistName) {
       `Artist "${artistName}" is not currently in the database.`
     );
     error.statusCode = 404;
+    error.code = "ARTIST_NOT_IN_DB";
     throw error;
   }
 

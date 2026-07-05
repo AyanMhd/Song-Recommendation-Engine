@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "/search": backendOrigin,
         "/health": backendOrigin,
+        "/artists": backendOrigin,
       },
     },
   };

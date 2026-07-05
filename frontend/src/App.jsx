@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ArtistsPage from "./ArtistsPage";
 
 const THEME_LABELS = {
   struggle: "Struggle",
@@ -8,9 +9,7 @@ const THEME_LABELS = {
   party: "Party",
 };
 
-async function searchSongs({ artist, exampleSong, vibeText }) { 
-  //example song is neccesary so we create a seperate variable for that and then 
-  //append the vibe text if present
+async function searchSongs({ artist, exampleSong, vibeText }) {
   const body = {
     artist,
     example_song: exampleSong,
@@ -22,15 +21,16 @@ async function searchSongs({ artist, exampleSong, vibeText }) {
 
   const response = await fetch("/search", {
     method: "POST",
-    headers: { "Content-Type": "application/json" }, 
-    //attach the data we already for search to happen
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
-  const data = await response.json(); // extract json from response
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || "Search failed.");
+    const error = new Error(data.error || "Search failed.");
+    error.code = data.code;
+    throw error;
   }
 
   return data.results || [];
@@ -97,18 +97,33 @@ function ResultCard({ song, rank }) {
 }
 
 export default function App() {
+  const [view, setView] = useState("search");
   const [artist, setArtist] = useState("");
   const [exampleSong, setExampleSong] = useState("");
   const [vibeText, setVibeText] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-   
-  //this function is called when the form is submitted
+
+  function openArtistsPage() {
+    setView("artists");
+  }
+
+  function handleSelectArtist(name) {
+    setArtist(name);
+    setView("search");
+    setError("");
+    setErrorCode("");
+    setResults([]);
+    setHasSearched(false);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setErrorCode("");
     setLoading(true);
     setHasSearched(true);
     setResults([]);
@@ -122,14 +137,24 @@ export default function App() {
       setResults(songs);
     } catch (submitError) {
       setError(submitError.message);
+      setErrorCode(submitError.code || "");
     } finally {
       setLoading(false);
     }
   }
-  //this is the main return statement for the app
+
+  if (view === "artists") {
+    return <ArtistsPage onBack={() => setView("search")} onSelectArtist={handleSelectArtist} />;
+  }
+
   return (
     <div className="app-shell">
       <header className="hero">
+        <div className="hero-topline">
+          <button className="text-button" onClick={openArtistsPage} type="button">
+            Browse available artists
+          </button>
+        </div>
         <p className="eyebrow">Lyric Vibe Recommender</p>
         <h1>Find songs with similar lyrics.</h1>
         <p className="hero-copy">
@@ -181,7 +206,16 @@ export default function App() {
             </button>
           </form>
 
-          {error ? <p className="error-banner">{error}</p> : null}
+          {error ? (
+            <div className="error-banner">
+              <p>{error}</p>
+              {errorCode === "ARTIST_NOT_IN_DB" ? (
+                <button className="inline-link-button" onClick={openArtistsPage} type="button">
+                  Browse available artists
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </section>
 
         <section className="panel results-panel">

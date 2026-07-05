@@ -446,6 +446,28 @@ async function getEmbeddedSongCount(client, artistId) {
   return result.rows[0]?.count || 0;
 }
 
+async function listAvailableArtists(client) {
+  const result = await client.query(
+    `SELECT
+       a.id,
+       a.name,
+       COUNT(s.id) FILTER (WHERE s.processing_status = 'embedded')::int AS embedded_count,
+       COUNT(s.id)::int AS song_count
+     FROM artists a
+     LEFT JOIN songs s ON s.artist_id = a.id
+     GROUP BY a.id, a.name
+     HAVING COUNT(s.id) FILTER (WHERE s.processing_status = 'embedded') > 0
+     ORDER BY a.name`
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    embedded_count: row.embedded_count,
+    song_count: row.song_count,
+  }));
+}
+
 async function startIngestionRun(client, artistId, stage) {
   const result = await client.query(
     `INSERT INTO ingestion_runs (artist_id, stage, status)
@@ -506,6 +528,7 @@ module.exports = {
   getThemeScoresForSongs,
   getSongsByIds,
   getEmbeddedSongCount,
+  listAvailableArtists,
   startIngestionRun,
   finishIngestionRun,
   withTransaction,

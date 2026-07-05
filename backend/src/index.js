@@ -5,6 +5,8 @@ const express = require("express");
 const morgan = require("morgan");
 const { frontendDistDir, port } = require("./config");
 const { searchSongs } = require("./services/recommender");
+const pool = require("./db/connection");
+const { listAvailableArtists } = require("./db/queries");
 
 const app = express();
 
@@ -14,11 +16,25 @@ app.use(morgan("dev"));
 
 app.get("/health", async (_request, response) => {
   try {
-    const pool = require("./db/connection");
     await pool.query("SELECT 1");
     response.json({ ok: true, database: "connected" });
   } catch (error) {
     response.status(503).json({ ok: false, database: "disconnected", error: error.message });
+  }
+});
+
+app.get("/artists", async (_request, response) => {
+  const client = await pool.connect();
+
+  try {
+    const artists = await listAvailableArtists(client);
+    response.json({ artists });
+  } catch (error) {
+    response.status(500).json({
+      error: error.message || "Failed to load artists.",
+    });
+  } finally {
+    client.release();
   }
 });
 
@@ -29,7 +45,7 @@ app.post("/search", async (request, response) => {
   const vibeText = request.body?.vibe_text?.trim();
   const exampleSong = request.body?.example_song?.trim();
   const limit = request.body?.limit;
-  
+
   if (!artist || !exampleSong) {
     response.status(400).json({
       error: "`artist` and `example_song` are required.",
@@ -49,6 +65,7 @@ app.post("/search", async (request, response) => {
   } catch (error) {
     response.status(error.statusCode || 500).json({
       error: error.message || "Unexpected server error.",
+      code: error.code || undefined,
     });
   }
 });
@@ -57,7 +74,11 @@ if (fs.existsSync(frontendDistDir)) {
   app.use(express.static(frontendDistDir));
 
   app.get("*", (request, response, next) => {
-    if (request.path.startsWith("/search") || request.path.startsWith("/health")) {
+    if (
+      request.path.startsWith("/search") ||
+      request.path.startsWith("/health") ||
+      request.path.startsWith("/artists")
+    ) {
       next();
       return;
     }
