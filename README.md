@@ -1,10 +1,10 @@
 # Lyric Vibe Recommender
 
+**Live demo:** [https://lyric-vibe-recommender.onrender.com/](https://lyric-vibe-recommender.onrender.com/)
+
 A full-stack app that recommends songs from a single artist by comparing lyrics, vibe text, and an optional example song.
 
 **Architecture docs:** see [ARCHITECTURE.md](./backend/ARCHITECTURE.md) for HLD diagrams, data flow, database design, and pipeline details.
-
-**Deploy to production (free tier):** see [DEPLOYMENT.md](./DEPLOYMENT.md) — Render free plan, no card required.
 
 ## Stack
 
