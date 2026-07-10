@@ -1,9 +1,18 @@
 :root {
-  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
-  color: #eef2ff;
-  background: #0b1020;
+  --bg: #0d0d0f;
+  --panel: #131316;
+  --panel-raised: #1a1a1f;
+  --line: #2a2a30;
+  --text: #f2f0eb;
+  --text-dim: #9d9a92;
+  --accent: #f5b942;
+  --accent-dark: #d99a1b;
+
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
   color-scheme: dark;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 * {
@@ -19,10 +28,25 @@ body,
 body {
   margin: 0;
   min-width: 320px;
+  background: transparent;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("/background.jpg") center / cover no-repeat;
+  filter: saturate(0.85);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
-    radial-gradient(circle at top, rgba(99, 102, 241, 0.18), transparent 30%),
-    radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.12), transparent 24%),
-    #0b1020;
+    linear-gradient(180deg, rgba(13, 13, 15, 0.55) 0%, rgba(13, 13, 15, 0.82) 40%, rgba(13, 13, 15, 0.95) 100%);
 }
 
 button,
@@ -31,141 +55,206 @@ textarea {
   font: inherit;
 }
 
+::selection {
+  background: var(--accent);
+  color: #141414;
+}
+
 .app-shell {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 32px 0 48px;
+  padding: 28px 0 64px;
 }
 
+/* ---------- hero ---------- */
+
 .hero {
-  margin-bottom: 28px;
+  margin-bottom: 36px;
+  padding-top: 8px;
+}
+
+.hero-topline {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.hero-compact {
+  margin-bottom: 24px;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: #a5b4fc;
+  color: var(--accent);
 }
 
 .hero h1 {
   margin: 0;
-  max-width: 12ch;
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  line-height: 1.02;
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-weight: 400;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.75);
 }
 
 .hero-copy {
-  margin: 14px 0 0;
-  max-width: 58ch;
-  color: rgba(226, 232, 255, 0.78);
+  margin: 16px 0 0;
+  max-width: 52ch;
+  color: #cfccc4;
+  font-size: 0.98rem;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
 }
+
+/* ---------- layout + panels ---------- */
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+  gap: 18px;
   align-items: start;
 }
 
 .panel {
-  border: 1px solid rgba(148, 163, 255, 0.16);
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.82));
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(19, 19, 22, 0.92);
+  backdrop-filter: blur(6px);
 }
 
 .search-panel {
-  padding: 22px;
+  padding: 24px;
   position: sticky;
   top: 20px;
+  border-top: 3px solid var(--accent);
 }
+
+/* ---------- form ---------- */
 
 .search-form {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .field {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .field span {
-  font-size: 0.88rem;
-  color: rgba(199, 210, 254, 0.88);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
 
 .field input,
 .field textarea {
   width: 100%;
-  border: 1px solid rgba(148, 163, 255, 0.18);
-  border-radius: 14px;
-  padding: 12px 14px;
-  color: #f8fafc;
-  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 11px 13px;
+  color: var(--text);
+  background: #0e0e11;
   resize: vertical;
+  transition: border-color 140ms ease;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #55534d;
 }
 
 .field input:focus,
 .field textarea:focus {
-  outline: 2px solid rgba(129, 140, 248, 0.45);
-  border-color: rgba(129, 140, 248, 0.45);
+  outline: none;
+  border-color: var(--accent);
 }
 
 .submit-button {
   border: 0;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 13px 18px;
-  color: #0f172a;
-  background: linear-gradient(135deg, #c4b5fd, #818cf8);
+  color: #141414;
+  background: var(--accent);
   font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: var(--accent-dark);
 }
 
 .submit-button:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: wait;
 }
 
 .error-banner {
   margin: 16px 0 0;
   padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(127, 29, 29, 0.28);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  color: #fecaca;
+  border-radius: 4px;
+  background: rgba(127, 29, 29, 0.25);
+  border: 1px solid rgba(220, 90, 90, 0.4);
+  color: #f0b6b6;
+  font-size: 0.92rem;
   display: grid;
   gap: 10px;
 }
 
+/* ---------- results ---------- */
+
 .results-panel {
-  padding: 22px;
+  padding: 24px;
   min-height: 420px;
+}
+
+.results-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
 }
 
 .results-header h2 {
   margin: 0;
-  font-size: 1.4rem;
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 1.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .results-header p {
-  margin: 8px 0 0;
-  color: rgba(203, 213, 225, 0.78);
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
 }
 
 .results-list {
   display: grid;
-  gap: 16px;
-  margin-top: 20px;
+  margin-top: 6px;
 }
 
 .result-card {
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 255, 0.12);
-  background: rgba(15, 23, 42, 0.55);
+  padding: 20px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.result-card:last-child {
+  border-bottom: 0;
 }
 
 .result-header {
@@ -176,215 +265,248 @@ textarea {
 }
 
 .result-rank {
-  margin: 0 0 4px;
-  font-size: 0.75rem;
+  margin: 0 0 2px;
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-size: 1rem;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #a5b4fc;
+  color: var(--accent);
 }
 
 .result-card h3 {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .result-artist {
-  margin: 4px 0 0;
-  color: rgba(203, 213, 225, 0.78);
+  margin: 3px 0 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
 }
 
 .score-badge {
-  min-width: 84px;
-  padding: 10px 12px;
-  border-radius: 16px;
+  min-width: 72px;
+  padding: 8px 12px;
+  border-radius: 4px;
   text-align: center;
-  background: rgba(99, 102, 241, 0.18);
-  border: 1px solid rgba(129, 140, 248, 0.28);
+  background: transparent;
+  border: 1px solid var(--line);
 }
 
 .score-badge span {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #c7d2fe;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
 }
 
 .score-badge strong {
-  font-size: 1.4rem;
+  font-size: 1.35rem;
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-weight: 400;
+  color: var(--accent);
 }
 
 .metric-row {
   display: flex;
-  gap: 12px;
-  margin: 16px 0;
+  gap: 18px;
+  margin: 14px 0;
 }
 
 .metric {
-  flex: 1;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(30, 41, 59, 0.72);
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 0;
+  background: none;
 }
 
 .metric span {
-  display: block;
-  font-size: 0.75rem;
-  color: rgba(203, 213, 225, 0.72);
+  font-size: 0.7rem;
+  color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
 }
 
 .metric strong {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
 }
+
+/* ---------- theme bars ---------- */
 
 .theme-bars {
   display: grid;
-  gap: 8px;
+  gap: 7px;
+  max-width: 460px;
 }
 
 .theme-row {
   display: grid;
-  grid-template-columns: 92px 1fr 42px;
+  grid-template-columns: 92px 1fr 40px;
   gap: 10px;
   align-items: center;
 }
 
 .theme-label,
 .theme-value {
-  font-size: 0.82rem;
-  color: rgba(203, 213, 225, 0.82);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.theme-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .theme-track {
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(51, 65, 85, 0.9);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
   overflow: hidden;
 }
 
 .theme-fill {
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #818cf8, #c084fc);
+  background: var(--accent);
 }
 
 .youtube-link {
   display: inline-flex;
-  margin-top: 16px;
-  color: #c7d2fe;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.youtube-link::before {
+  content: "\25B6";
+  font-size: 0.65rem;
 }
 
 .youtube-link:hover {
-  text-decoration: underline;
+  color: var(--accent-dark);
 }
 
-.hero-topline {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-}
-
-.hero-compact {
-  margin-bottom: 20px;
-}
+/* ---------- buttons / links ---------- */
 
 .text-button,
 .inline-link-button {
-  border: 0;
-  background: none;
-  color: #c7d2fe;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(19, 19, 22, 0.85);
+  color: var(--text);
   font: inherit;
+  font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
-  padding: 0;
+  padding: 8px 14px;
+  transition: border-color 140ms ease, color 140ms ease;
 }
 
 .text-button:hover,
 .inline-link-button:hover {
-  text-decoration: underline;
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
 }
+
+.inline-link-button {
+  justify-self: start;
+}
+
+/* ---------- artists page ---------- */
 
 .artists-layout {
   max-width: 960px;
 }
 
 .artists-panel {
-  padding: 22px;
+  padding: 24px;
+  border-top: 3px solid var(--accent);
 }
 
 .artists-meta {
-  margin: 0 0 18px;
-  color: rgba(203, 213, 225, 0.78);
+  margin: 14px 0 18px;
+  color: var(--text-dim);
+  font-size: 0.88rem;
 }
 
 .artist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .artist-card {
-  border: 1px solid rgba(148, 163, 255, 0.16);
-  border-radius: 18px;
-  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0e0e11;
   color: inherit;
-  padding: 18px;
+  padding: 16px;
   text-align: left;
   cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  transition: border-color 140ms ease;
 }
 
 .artist-card:hover {
-  transform: translateY(-1px);
-  border-color: rgba(129, 140, 248, 0.42);
-  background: rgba(30, 41, 59, 0.72);
+  border-color: var(--accent);
 }
 
 .artist-card-top {
   display: flex;
-  gap: 14px;
+  gap: 13px;
   align-items: center;
 }
 
 .artist-initial {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
   display: grid;
   place-items: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #eef2ff;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.45), rgba(192, 132, 252, 0.35));
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 1.4rem;
+  color: #141414;
+  background: var(--accent);
 }
 
 .artist-card h3 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
 }
 
 .artist-card p {
   margin: 4px 0 0;
-  color: rgba(203, 213, 225, 0.78);
-  font-size: 0.92rem;
+  color: var(--text-dim);
+  font-size: 0.88rem;
 }
 
 .artist-card-action {
   display: inline-flex;
-  margin-top: 16px;
-  color: #c7d2fe;
-  font-size: 0.9rem;
+  margin-top: 14px;
+  color: var(--accent);
+  font-size: 0.75rem;
   font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .empty-state {
   margin: 8px 0 0;
-  color: rgba(203, 213, 225, 0.78);
+  color: var(--text-dim);
 }
+
+/* ---------- responsive ---------- */
 
 @media (max-width: 900px) {
   .layout {
