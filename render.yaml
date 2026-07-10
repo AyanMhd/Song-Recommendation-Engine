@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: lyric-vibe-recommender
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    region: singapore
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_BIN
+        value: /opt/venv/bin/python
+      - key: DATABASE_URL
+        sync: false
+      - key: MUSICBRAINZ_APP_NAME
+        value: LyricVibeRecommender
+      - key: MUSICBRAINZ_APP_VERSION
+        value: 1.0.0
+      - key: MUSICBRAINZ_CONTACT_EMAIL
+        sync: false
+      - key: SEARCH_RESULT_LIMIT
+        value: "10"
+      - key: HNSW_EF_SEARCH
+        value: "100"
