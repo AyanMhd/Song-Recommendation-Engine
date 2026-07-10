@@ -46,7 +46,7 @@ body::after {
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, rgba(13, 13, 15, 0.55) 0%, rgba(13, 13, 15, 0.82) 40%, rgba(13, 13, 15, 0.95) 100%);
+    linear-gradient(180deg, rgba(13, 13, 15, 0.5) 0%, rgba(13, 13, 15, 0.62) 40%, rgba(13, 13, 15, 0.72) 100%);
 }
 
 button,
@@ -123,8 +123,8 @@ textarea {
 .panel {
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: rgba(19, 19, 22, 0.92);
-  backdrop-filter: blur(6px);
+  background: rgba(19, 19, 22, 0.6);
+  backdrop-filter: blur(10px);
 }
 
 .search-panel {
@@ -161,7 +161,7 @@ textarea {
   border-radius: 4px;
   padding: 11px 13px;
   color: var(--text);
-  background: #0e0e11;
+  background: rgba(14, 14, 17, 0.55);
   resize: vertical;
   transition: border-color 140ms ease;
 }
@@ -449,7 +449,7 @@ textarea {
 .artist-card {
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #0e0e11;
+  background: rgba(14, 14, 17, 0.55);
   color: inherit;
   padding: 16px;
   text-align: left;
@@ -465,6 +465,14 @@ textarea {
   display: flex;
   gap: 13px;
   align-items: center;
+}
+
+.artist-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--line);
 }
 
 .artist-initial {

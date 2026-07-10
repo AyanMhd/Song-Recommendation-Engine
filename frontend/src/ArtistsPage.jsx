@@ -95,7 +95,16 @@ export default function ArtistsPage({ onBack, onSelectArtist }) {
                 type="button"
               >
                 <div className="artist-card-top">
-                  <span className="artist-initial">{artist.name.charAt(0).toUpperCase()}</span>
+                  {artist.image_url ? (
+                    <img
+                      alt={artist.name}
+                      className="artist-photo"
+                      loading="lazy"
+                      src={artist.image_url}
+                    />
+                  ) : (
+                    <span className="artist-initial">{artist.name.charAt(0).toUpperCase()}</span>
+                  )}
                   <div>
                     <h3>{artist.name}</h3>
                   </div>
