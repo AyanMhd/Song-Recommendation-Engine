@@ -4,7 +4,7 @@ A full-stack app that recommends songs from a single artist by comparing lyrics,
 
 **Architecture docs:** see [ARCHITECTURE.md](./backend/ARCHITECTURE.md) for HLD diagrams, data flow, database design, and pipeline details.
 
-**Deploy to production:** see [DEPLOYMENT.md](./DEPLOYMENT.md) for Render + GitHub auto-deploy.
+**Deploy to production (free tier):** see [DEPLOYMENT.md](./DEPLOYMENT.md) — Render free plan, no card required.
 
 ## Stack
 
