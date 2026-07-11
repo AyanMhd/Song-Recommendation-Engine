@@ -452,11 +452,12 @@ async function listAvailableArtists(client) {
     `SELECT
        a.id,
        a.name,
+       a.image_url,
        COUNT(s.id) FILTER (WHERE s.processing_status = 'embedded')::int AS embedded_count,
        COUNT(s.id)::int AS song_count
      FROM artists a
      LEFT JOIN songs s ON s.artist_id = a.id
-     GROUP BY a.id, a.name
+     GROUP BY a.id, a.name, a.image_url
      HAVING COUNT(s.id) FILTER (WHERE s.processing_status = 'embedded') > 0
      ORDER BY a.name`
   );
@@ -464,6 +465,7 @@ async function listAvailableArtists(client) {
   return result.rows.map((row) => ({
     id: row.id,
     name: row.name,
+    image_url: row.image_url || null,
     embedded_count: row.embedded_count,
     song_count: row.song_count,
   }));

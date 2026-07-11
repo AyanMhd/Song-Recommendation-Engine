@@ -1,5 +1,6 @@
 const { runFetchSongs } = require("./fetchSongs");
 const { runFetchLyrics } = require("./fetchLyrics");
+const { runFetchArtistImage } = require("./fetchArtistImage");
 
 async function main() {
   const artistName = process.argv.slice(2).join(" ").trim();
@@ -10,6 +11,12 @@ async function main() {
 
   const songsData = await runFetchSongs(artistName);
   console.log(`Fetched ${songsData.songs.length} unique tracks for ${songsData.artist}.`);
+
+  try {
+    await runFetchArtistImage(songsData.artist);
+  } catch (imageError) {
+    console.warn(`Could not fetch artist image: ${imageError.message}`);
+  }
 
   const lyricsResult = await runFetchLyrics({ artistName: songsData.artist, refresh: false });
   console.log(

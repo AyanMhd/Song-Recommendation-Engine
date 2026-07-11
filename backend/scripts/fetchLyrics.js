@@ -8,9 +8,43 @@ const {
 } = require("../src/db/queries");
 const { searchSongOnGenius } = require("./lib/geniusClient");
 const { scrapeLyricsFromGenius } = require("./lib/lyricsScraper");
+const { fetchLyricsFromLrclib } = require("./lib/lrclibClient");
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withClient(callback, { retries = 3 } = {}) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    const client = await pool.connect();
+
+    client.on("error", (error) => {
+      console.warn(`Postgres client error: ${error.message}`);
+    });
+
+    try {
+      return await callback(client);
+    } catch (error) {
+      lastError = error;
+      const retryable =
+        error.code === "ECONNRESET" ||
+        error.code === "ETIMEDOUT" ||
+        /Connection terminated|connection terminated/i.test(error.message || "");
+
+      if (!retryable || attempt === retries) {
+        throw error;
+      }
+
+      console.warn(`DB retry ${attempt}/${retries}: ${error.message}`);
+      await sleep(500 * attempt);
+    } finally {
+      client.release();
+    }
+  }
+
+  throw lastError;
 }
 
 async function runFetchLyrics(options = {}) {
@@ -21,45 +55,54 @@ async function runFetchLyrics(options = {}) {
     throw new Error('Artist name is required. Usage: node scripts/fetchLyrics.js "Artist Name"');
   }
 
-  const client = await pool.connect();
-  let runId = null;
+  const artist = await withClient((client) => findArtistByName(client, artistName));
+
+  if (!artist) {
+    throw new Error(`Artist "${artistName}" was not found in PostgreSQL. Run fetchSongs first.`);
+  }
+
+  const songs = await withClient((client) => getSongsNeedingLyrics(client, artist.id, { refresh }));
+
+  if (!songs.length) {
+    return { artist: artist.name, processed: 0, withLyrics: 0 };
+  }
+
+  const runId = await withClient((client) => startIngestionRun(client, artist.id, "fetch_lyrics"));
+  let withLyrics = 0;
+  let completed = 0;
 
   try {
-    const artist = await findArtistByName(client, artistName);
-
-    if (!artist) {
-      throw new Error(`Artist "${artistName}" was not found in PostgreSQL. Run fetchSongs first.`);
-    }
-
-    const songs = await getSongsNeedingLyrics(client, artist.id, { refresh });
-
-    if (!songs.length) {
-      return { artist: artist.name, songs: [] };
-    }
-
-    runId = await startIngestionRun(client, artist.id, "fetch_lyrics");
-    let withLyrics = 0;
-    let completed = 0;
-
     for (const song of songs) {
       let rawLyrics = "";
       let geniusUrl = null;
 
       try {
-        const result = await searchSongOnGenius(artist.name, song.title);
-
-        if (result?.url) {
-          geniusUrl = result.url;
-          rawLyrics = await scrapeLyricsFromGenius(result.url);
-        }
+        rawLyrics = await fetchLyricsFromLrclib(artist.name, song.title);
       } catch (error) {
-        console.warn(`Failed to fetch lyrics for "${song.title}": ${error.message}`);
+        console.warn(`lrclib failed for "${song.title}": ${error.message}`);
       }
 
-      await upsertLyrics(client, song.id, { rawLyrics, geniusUrl });
+      if (!rawLyrics) {
+        try {
+          const result = await searchSongOnGenius(artist.name, song.title);
 
-      if (rawLyrics) {
-        withLyrics += 1;
+          if (result?.url) {
+            geniusUrl = result.url;
+            rawLyrics = await scrapeLyricsFromGenius(result.url);
+          }
+        } catch (error) {
+          console.warn(`Genius fallback failed for "${song.title}": ${error.message}`);
+        }
+      }
+
+      try {
+        await withClient((client) => upsertLyrics(client, song.id, { rawLyrics, geniusUrl }));
+
+        if (rawLyrics) {
+          withLyrics += 1;
+        }
+      } catch (error) {
+        console.warn(`DB save failed for "${song.title}": ${error.message}`);
       }
 
       completed += 1;
@@ -67,20 +110,20 @@ async function runFetchLyrics(options = {}) {
       console.log(`[${completed}/${songs.length}] Processed "${song.title}"`);
     }
 
-    await finishIngestionRun(client, runId, "completed", {
-      processed: songs.length,
-      with_lyrics: withLyrics,
-    });
+    await withClient((client) =>
+      finishIngestionRun(client, runId, "completed", {
+        processed: songs.length,
+        with_lyrics: withLyrics,
+      })
+    );
 
     return { artist: artist.name, processed: songs.length, withLyrics };
   } catch (error) {
-    if (runId) {
-      await finishIngestionRun(client, runId, "failed", { error: error.message });
-    }
+    await withClient((client) =>
+      finishIngestionRun(client, runId, "failed", { error: error.message })
+    ).catch(() => {});
 
     throw error;
-  } finally {
-    client.release();
   }
 }
 

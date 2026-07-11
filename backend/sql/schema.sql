@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS artists (
     name TEXT NOT NULL UNIQUE,
     name_normalized TEXT NOT NULL UNIQUE,
     musicbrainz_id UUID,
+    image_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
