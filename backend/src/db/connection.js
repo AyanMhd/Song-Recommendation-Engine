@@ -8,8 +8,13 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Add it to your .env file.");
 }
 
+// Avoid the noisy pg SSL deprecation warning on stderr (PowerShell paints it red).
+const connectionString = process.env.DATABASE_URL.includes("uselibpqcompat=")
+  ? process.env.DATABASE_URL
+  : `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes("?") ? "&" : "?"}uselibpqcompat=true`;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   max: Number(process.env.PG_POOL_MAX) || 10,
   keepAlive: true,
 });

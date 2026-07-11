@@ -3,11 +3,10 @@ const {
   findArtistByName,
   finishIngestionRun,
   getSongsNeedingLyrics,
+  markSongSkipped,
   startIngestionRun,
   upsertLyrics,
 } = require("../src/db/queries");
-const { searchSongOnGenius } = require("./lib/geniusClient");
-const { scrapeLyricsFromGenius } = require("./lib/lyricsScraper");
 const { fetchLyricsFromLrclib } = require("./lib/lrclibClient");
 
 function sleep(ms) {
@@ -64,60 +63,55 @@ async function runFetchLyrics(options = {}) {
   const songs = await withClient((client) => getSongsNeedingLyrics(client, artist.id, { refresh }));
 
   if (!songs.length) {
-    return { artist: artist.name, processed: 0, withLyrics: 0 };
+    return { artist: artist.name, processed: 0, withLyrics: 0, skipped: 0 };
   }
 
   const runId = await withClient((client) => startIngestionRun(client, artist.id, "fetch_lyrics"));
   let withLyrics = 0;
+  let skipped = 0;
   let completed = 0;
 
   try {
     for (const song of songs) {
       let rawLyrics = "";
-      let geniusUrl = null;
 
       try {
         rawLyrics = await fetchLyricsFromLrclib(artist.name, song.title);
       } catch (error) {
-        console.warn(`lrclib failed for "${song.title}": ${error.message}`);
-      }
-
-      if (!rawLyrics) {
-        try {
-          const result = await searchSongOnGenius(artist.name, song.title);
-
-          if (result?.url) {
-            geniusUrl = result.url;
-            rawLyrics = await scrapeLyricsFromGenius(result.url);
-          }
-        } catch (error) {
-          console.warn(`Genius fallback failed for "${song.title}": ${error.message}`);
-        }
+        // Timeouts / 403 / 5xx: skip this song and continue the batch.
+        console.warn(`Skipping "${song.title}" (lyrics unavailable: ${error.message})`);
       }
 
       try {
-        await withClient((client) => upsertLyrics(client, song.id, { rawLyrics, geniusUrl }));
-
         if (rawLyrics) {
+          await withClient((client) => upsertLyrics(client, song.id, { rawLyrics, geniusUrl: null }));
           withLyrics += 1;
+        } else {
+          await withClient((client) => markSongSkipped(client, song.id));
+          skipped += 1;
+          console.log(`[${completed + 1}/${songs.length}] Skipped "${song.title}" (no lyrics)`);
         }
       } catch (error) {
         console.warn(`DB save failed for "${song.title}": ${error.message}`);
+        skipped += 1;
       }
 
       completed += 1;
-      await sleep(350);
-      console.log(`[${completed}/${songs.length}] Processed "${song.title}"`);
+      if (rawLyrics) {
+        console.log(`[${completed}/${songs.length}] Processed "${song.title}"`);
+      }
+      await sleep(200);
     }
 
     await withClient((client) =>
       finishIngestionRun(client, runId, "completed", {
         processed: songs.length,
         with_lyrics: withLyrics,
+        skipped,
       })
     );
 
-    return { artist: artist.name, processed: songs.length, withLyrics };
+    return { artist: artist.name, processed: songs.length, withLyrics, skipped };
   } catch (error) {
     await withClient((client) =>
       finishIngestionRun(client, runId, "failed", { error: error.message })
@@ -136,7 +130,7 @@ async function main() {
     .trim();
   const result = await runFetchLyrics({ artistName, refresh });
   console.log(
-    `Fetched lyrics for ${result.withLyrics || 0} of ${result.processed || 0} songs for ${result.artist}.`
+    `Fetched lyrics for ${result.withLyrics || 0} of ${result.processed || 0} songs for ${result.artist} (${result.skipped || 0} skipped).`
   );
 }
 

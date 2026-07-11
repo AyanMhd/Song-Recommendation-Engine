@@ -50,7 +50,8 @@ async function upsertArtist(client, { name, musicbrainzId = null }) {
 
 async function findArtistByName(client, artistName) {
   const normalized = normalizeKey(artistName); 
-  //this is just a query to the database to find the artist by name
+  //this is just a query to the database to find the artist by name 
+  //$1 is a just a placeholder for the normalized artist name
   const exact = await client.query(
     `SELECT id, name, name_normalized
      FROM artists
