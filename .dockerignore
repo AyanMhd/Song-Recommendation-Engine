@@ -10,3 +10,7 @@ frontend/dist
 **/terminals
 *.md
 !README.md
+ingest-batch.log
+ingest-batch-out.log
+ingest-batch-err.log
+run-batch.ps1

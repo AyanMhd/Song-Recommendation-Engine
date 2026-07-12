@@ -6,3 +6,10 @@ node_modules/
 frontend/dist/
 backend/node_modules/
 frontend/node_modules/
+
+# Local batch ingestion (logs + launcher — not part of the repo)
+ingest-batch.log
+ingest-batch-out.log
+ingest-batch-err.log
+run-batch.ps1
+

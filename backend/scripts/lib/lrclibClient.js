@@ -115,14 +115,42 @@ async function searchBestMatch(artistName, trackName) {
   return best && best.score >= 5 ? pickLyrics(best.record) : "";
 }
 
-async function fetchLyricsFromLrclib(artistName, trackName) {
-  const exact = await getExactMatch(artistName, trackName);
+function stripVersionSuffix(title = "") {
+  return title
+    .replace(/\s*\([^)]*\)/g, " ")
+    .replace(/\s*\[[^\]]*\]/g, " ")
+    .replace(/\s+-\s+.+$/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  if (exact) {
-    return exact;
+function titleVariants(trackName) {
+  const variants = [trackName];
+  const stripped = stripVersionSuffix(trackName);
+
+  if (stripped && stripped !== trackName) {
+    variants.push(stripped);
   }
 
-  return searchBestMatch(artistName, trackName);
+  return [...new Set(variants)];
+}
+
+async function fetchLyricsFromLrclib(artistName, trackName) {
+  for (const variant of titleVariants(trackName)) {
+    const exact = await getExactMatch(artistName, variant);
+
+    if (exact) {
+      return exact;
+    }
+
+    const fuzzy = await searchBestMatch(artistName, variant);
+
+    if (fuzzy) {
+      return fuzzy;
+    }
+  }
+
+  return "";
 }
 
 module.exports = {
