@@ -21,3 +21,5 @@ services:
         value: "10"
       - key: HNSW_EF_SEARCH
         value: "100"
+      - key: ENABLE_PYTHON_VIBE
+        value: "false"

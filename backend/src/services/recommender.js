@@ -1,7 +1,8 @@
 const pool = require("../db/connection");
 const { normalizeSongTitle } = require("../../shared/text");
-const { searchResultLimit } = require("../config");
+const { searchResultLimit, enablePythonVibe } = require("../config");
 const { embedText } = require("./pythonBridge");
+const { inferThemeWeightsFromText, isPythonUnavailable } = require("./vibeFallback");
 const { blendVectors, cosineSimilarity, roundScore } = require("../utils/math");
 const {
   THEME_NAMES,
@@ -145,11 +146,32 @@ async function searchSongs({ artist, vibeText, exampleSong, limit = searchResult
 
     let queryEmbedding = exampleEmbedding.embedding || [];
     let queryThemeVector;
+    let semanticWeight = 0.7;
+    let themeWeight = 0.3;
 
     if (vibeText) {
-      const vibeFeatures = await embedText(vibeText);
-      queryEmbedding = blendVectors(exampleEmbedding.embedding || [], vibeFeatures.embedding || [], 0.7, 0.3);
-      queryThemeVector = getThemeVector(vibeFeatures.themes || {});
+      let usedThemeKeywords = false;
+
+      if (enablePythonVibe) {
+        try {
+          const vibeFeatures = await embedText(vibeText);
+          queryEmbedding = blendVectors(exampleEmbedding.embedding || [], vibeFeatures.embedding || [], 0.7, 0.3);
+          queryThemeVector = getThemeVector(vibeFeatures.themes || {});
+        } catch (error) {
+          if (!isPythonUnavailable(error)) {
+            throw error;
+          }
+          usedThemeKeywords = true;
+        }
+      } else {
+        usedThemeKeywords = true;
+      }
+
+      if (usedThemeKeywords) {
+        queryThemeVector = getThemeVector(inferThemeWeightsFromText(vibeText));
+        semanticWeight = 0.45;
+        themeWeight = 0.55;
+      }
     } else {
       const exampleThemes = await getThemeScoresForSongs(client, [exampleEntry.id]);
       queryThemeVector = getThemeVector(exampleThemes.get(exampleEntry.id) || {});
@@ -192,7 +214,7 @@ async function searchSongs({ artist, vibeText, exampleSong, limit = searchResult
       const themes = themeMap.get(candidate.song_id) || {};
       const themeAlignment = Math.max(0, cosineSimilarity(queryThemeVector, getThemeVector(themes)));
       const semanticSimilarity = Math.max(0, candidate.semanticSimilarity || 0);
-      const finalScore = 0.7 * semanticSimilarity + 0.3 * themeAlignment;
+      const finalScore = semanticWeight * semanticSimilarity + themeWeight * themeAlignment;
 
       if (!candidate.embedding) {
         const songEmbedding = await getSongEmbedding(client, candidate.song_id);
